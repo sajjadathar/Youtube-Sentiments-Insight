@@ -82,11 +82,18 @@ def load_model(model_path, vectorizer_path):
     except Exception as e:
         raise
 
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
+model, vectorizer = load_model(
+    os.path.join(ROOT_DIR, "lgbm_model.pkl"),
+    os.path.join(ROOT_DIR, "tfidf_vectorizer.pkl")
+)
 
 
 # Initialize the model and vectorizer
-model, vectorizer = load_model("./lgbm_model.pkl", "./tfidf_vectorizer.pkl")  
+# model, vectorizer = load_model("./lgbm_model.pkl", "./tfidf_vectorizer.pkl")  
 
 @app.route('/')
 def home():
