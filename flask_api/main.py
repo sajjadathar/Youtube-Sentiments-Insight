@@ -16,6 +16,8 @@ from mlflow.tracking import MlflowClient
 import matplotlib.dates as mdates
 import pickle
 
+import os
+
 
 app = Flask(__name__)
 CORS(app)
@@ -82,14 +84,19 @@ def load_model(model_path, vectorizer_path):
     except Exception as e:
         raise
 
-import os
+
+# 1. Get the directory where main.py lives (/app/flask_api)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 2. Get the root directory (/app)
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
-model, vectorizer = load_model(
-    os.path.join(ROOT_DIR, "lgbm_model.pkl"),
-    os.path.join(ROOT_DIR, "tfidf_vectorizer.pkl")
-)
+# 3. Define absolute paths to your files
+MODEL_PATH = os.path.join(ROOT_DIR, "lgbm_model.pkl")
+VECTORIZER_PATH = os.path.join(ROOT_DIR, "tfidf_vectorizer.pkl")
+
+# 4. Load using the absolute paths
+model, vectorizer = load_model(MODEL_PATH, VECTORIZER_PATH)
 
 
 # Initialize the model and vectorizer
