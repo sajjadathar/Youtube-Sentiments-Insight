@@ -55,7 +55,7 @@ def preprocess_comment(comment):
 # Load the model and vectorizer from the model registry and local storage
 # def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
 #     # Set MLflow tracking URI to your server
-#     mlflow.set_tracking_uri("http://ec2-3-135-213-218.us-east-2.compute.amazonaws.com:5000/")  # Replace with your MLflow tracking URI
+#     mlflow.set_tracking_uri("http://ec2-18-219-61-121.us-east-2.compute.amazonaws.com:5000/")  # Replace with your MLflow tracking URI
 #     client = MlflowClient()
 #     model_uri = f"models:/{model_name}/{model_version}"
 #     print(f"model_uri :{model_uri}")
@@ -65,38 +65,75 @@ def preprocess_comment(comment):
    
 #     return model, vectorizer
 
-# # Initialize the model and vectorizer
+# Initialize the model and vectorizer
 # model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "4", "./tfidf_vectorizer.pkl")  # Update paths and versions as needed
 
 
+MLFLOW_URI = "http://ec2-18-219-61-121.us-east-2.compute.amazonaws.com:5000/"
+
+def load_model_and_vectorizer(model_name, model_version):
+
+    # Connect to MLflow
+    mlflow.set_tracking_uri(MLFLOW_URI)
+    client = MlflowClient()
+
+    # 1️⃣ Load model from registry
+    model_uri = f"models:/{model_name}/{model_version}"
+    print("Loading model:", model_uri)
+    model = mlflow.pyfunc.load_model(model_uri)
+
+    # 2️⃣ Find run_id of this model version
+    mv = client.get_model_version(name=model_name, version=model_version)
+    run_id = mv.run_id
+    print("Run ID:", run_id)
+
+    # 3️⃣ Download vectorizer from ROOT artifacts
+    artifact_uri = f"runs:/{run_id}/tfidf_vectorizer.pkl"
+    print("Downloading vectorizer from:", artifact_uri)
+
+    local_path = mlflow.artifacts.download_artifacts(artifact_uri=artifact_uri)
+
+    # 4️⃣ Load vectorizer
+
+    with open(local_path, "rb") as f:
+        vectorizer = pickle.load(f)
+
+    print("Vectorizer loaded successfully")
+
+    return model, vectorizer
 
 
-def load_model(model_path, vectorizer_path):
-    """Load the trained model."""
-    try:
-        with open(model_path, 'rb') as file:
-            model = pickle.load(file)
+# test
+model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "4")
+
+
+
+# def load_model(model_path, vectorizer_path):
+#     """Load the trained model."""
+#     try:
+#         with open(model_path, 'rb') as file:
+#             model = pickle.load(file)
         
-        with open(vectorizer_path, 'rb') as file:
-            vectorizer = pickle.load(file)
+#         with open(vectorizer_path, 'rb') as file:
+#             vectorizer = pickle.load(file)
       
-        return model, vectorizer
-    except Exception as e:
-        raise
+#         return model, vectorizer
+#     except Exception as e:
+#         raise
 
 
 # 1. Get the directory where main.py lives (/app/flask_api)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 2. Get the root directory (/app)
-ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+# # 2. Get the root directory (/app)
+# ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
-# 3. Define absolute paths to your files
-MODEL_PATH = os.path.join(ROOT_DIR, "lgbm_model.pkl")
-VECTORIZER_PATH = os.path.join(ROOT_DIR, "tfidf_vectorizer.pkl")
+# # 3. Define absolute paths to your files
+# MODEL_PATH = os.path.join(ROOT_DIR, "lgbm_model.pkl")
+# VECTORIZER_PATH = os.path.join(ROOT_DIR, "tfidf_vectorizer.pkl")
 
 # 4. Load using the absolute paths
-model, vectorizer = load_model(MODEL_PATH, VECTORIZER_PATH)
+# model, vectorizer = load_model(MODEL_PATH, VECTORIZER_PATH)
 
 
 # Initialize the model and vectorizer
